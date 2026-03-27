@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>小书袋 · 阅读记录</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* 全局粉嫩可爱风格 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+            background: #fff9fb;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            color: #5e4b56;
+        }
+
+        .app-container {
+            max-width: 1000px;
+            width: 100%;
+            background: #ffffffdd;
+            backdrop-filter: blur(2px);
+            border-radius: 36px 36px 28px 28px;
+            box-shadow: 0 12px 28px rgba(245, 175, 200, 0.3), 0 4px 12px rgba(255, 215, 230, 0.5);
+            padding: 28px 24px;
+            border: 2px solid #ffd9e6;
+        }
+
+        /* 初始化页面 */
+        .init-screen {
+            display: block;
+            text-align: center;
+        }
+        .init-screen h2 {
+            font-size: 2.1rem;
+            font-weight: 400;
+            color: #f9a8bf;
+            margin-bottom: 12px;
+            text-shadow: 3px 3px 0 #ffe4ec;
+        }
+        .init-screen p {
+            color: #d989a5;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        .init-textarea {
+            width: 100%;
+            height: 200px;
+            padding: 20px;
+            border: 3px dashed #ffb6d1;
+            border-radius: 32px;
+            background: #fff5f9;
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #6d4c5d;
+            resize: vertical;
+            margin-bottom: 20px;
+            outline: none;
+        }
+        .init-textarea:focus {
+            border-color: #f98bb6;
+        }
+        .init-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            background: #ffc1d0;
+            padding: 14px 32px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #6b3e4f;
+            box-shadow: 0 6px 0 #e6a1b8;
+            cursor: pointer;
+            transition: all 0.07s ease;
+            border: 2px solid #ffe2ed;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #e6a1b8;
+        }
+        .btn-secondary {
+            background: #ffe2eb;
+            box-shadow: 0 6px 0 #e2b7c6;
+            color: #7a5065;
+        }
+        /* 统一操作按钮样式（导出和添加） */
+        .btn-action {
+            background: #fec7d5;
+            box-shadow: 0 6px 0 #da9eb3;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+        }
+
+        /* ---------- 正式页面 ---------- */
+        .main-screen {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px 12px;
+            background: #ffeef4;
+            padding: 16px 20px;
+            border-radius: 48px;
+            width: 100%;
+        }
+
+        /* 排序下拉框与标签下拉框统一尺寸 */
+        .sort-select,
+        #tagFilterSelect {
+            background: white;
+            border: 2px solid #ffbfd5;
+            border-radius: 40px;
+            padding: 12px 30px 12px 20px;
+            font-size: 1rem;
+            color: #794f62;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            box-shadow: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23794f62' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            line-height: 1.4;
+            height: 48px;
+            min-width: 150px;
+            flex: 1;                     /* 让两个下拉框等宽 */
+            width: auto;
+        }
+
+        /* 标签筛选组容器，也占用相同比例，使内部下拉框与排序下拉框等宽 */
+        .tag-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            padding: 0;
+            flex: 1;
+            min-width: 180px;
+        }
+        .tag-filter-group select {
+            flex: 1;
+        }
+
+        .add-tag-btn {
+            background: #ffeef4;
+            border: 2px dashed #ff99bb;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            color: #b95f85;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: 0.1s;
+            box-shadow: 0 2px 0 #e7b7c9;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            width: 48px;
+            line-height: 1;
+        }
+        .add-tag-btn:hover {
+            background: #ffe2ec;
+        }
+
+        /* 卡片网格 */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 22px;
+            margin: 10px 0;
+        }
+
+        .card {
+            background: white;
+            border-radius: 32px;
+            padding: 20px 18px 16px 18px;
+            border: 3px solid #ffdae9;
+            box-shadow: 0 10px 0 #fec7d8;
+            transition: transform 0.15s;
+            word-break: break-word;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #5d3c4a;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-rating {
+            background: #ffd3e0;
+            padding: 5px 12px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #a03e60;
+            border: 2px solid white;
+            display: inline-block;
+            margin-bottom: 12px;
+            align-self: flex-start;
+            white-space: nowrap;
+        }
+
+        .card-review {
+            color: #58434e;
+            line-height: 1.5;
+            font-size: 0.98rem;
+            background: #fef7fa;
+            padding: 12px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            word-break: break-word;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #b47b92;
+            font-size: 0.9rem;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .card-footer span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .card-tag {
+            background: #ffe2f0;
+            border-radius: 30px;
+            padding: 4px 12px;
+            border: 1px solid #ffb3cb;
+            max-width: 40%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .card-edit-icon {
+            color: #e596b6;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 30px;
+            background: #ffecf2;
+            transition: 0.1s;
+        }
+        .card-edit-icon:hover {
+            background: #fec7db;
+        }
+
+        /* 底部区域：搜索框 + 双按钮栏 */
+        .bottom-section {
+            margin-top: 20px;
+            width: 100%;
+        }
+        .search-area {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .search-area input {
+            width: 100%;
+            padding: 16px 24px;
+            border: 3px solid #ffd6e6;
+            border-radius: 60px;
+            background: white;
+            font-size: 1rem;
+            outline: none;
+            box-shadow: 0 6px 0 #fec7d8;
+        }
+        .search-area input:focus {
+            border-color: #fc9ec0;
+        }
+        .action-bar {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+        }
+        .action-bar .btn {
+            flex: 1;
+            justify-content: center;
+            padding: 14px 0;
+        }
+
+        .empty-note {
+            text-align: center;
+            color: #e2a7bb;
+            font-size: 1.3rem;
+            padding: 40px;
+            grid-column: 1 / -1;
+        }
+
+        /* 弹窗样式保持不变 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 220, 235, 0.7);
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .modal-content {
+            background: #fff9fc;
+            border-radius: 48px;
+            padding: 30px 28px;
+            max-width: 500px;
+            width: 90%;
+            border: 4px solid #ffbfd5;
+            box-shadow: 0 18px 0 #e5a5bc;
+            max-height: 85vh;
+            overflow-y: auto;
+            margin: 20px;
+        }
+        .modal-content.small {
+            max-width: 350px;
+        }
+        .modal-content h3 {
+            color: #bd6f8d;
+            margin-bottom: 20px;
+            font-size: 1.9rem;
+            font-weight: 400;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #9f6781;
+            display: block;
+            margin-bottom: 6px;
+            margin-left: 6px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border: 3px solid #ffd6e6;
+            border-radius: 40px;
+            background: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        .form-control:focus {
+            border-color: #fc9ec0;
+        }
+        textarea.form-control {
+            border-radius: 28px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 28px;
+            flex-wrap: wrap;
+        }
+        .modal-btn {
+            padding: 12px 26px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            background: #ffc2d5;
+            color: #553542;
+            border: 2px solid white;
+            box-shadow: 0 5px 0 #da9bb4;
+            cursor: pointer;
+        }
+        .modal-btn.delete {
+            background: #fbadad;
+            color: #4f2a2a;
+            margin-right: auto;
+        }
+        .modal-btn.secondary {
+            background: #f3dee6;
+            box-shadow: 0 5px 0 #c9b1bd;
+        }
+        .modal-actions.center {
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .modal {
+                padding: 16px;
+            }
+            .modal-content {
+                margin: 0;
+                max-height: calc(100vh - 32px);
+                padding: 22px 20px;
+                width: 100%;
+            }
+            .modal-content h3 {
+                font-size: 1.6rem;
+                margin-bottom: 16px;
+            }
+            .form-group {
+                margin-bottom: 12px;
+            }
+            .form-control {
+                padding: 12px 16px;
+            }
+            .modal-actions {
+                margin-top: 20px;
+            }
+            .modal-btn {
+                padding: 10px 22px;
+                font-size: 0.95rem;
+            }
+            /* 移动端下拉框微调高度，保持等宽 */
+            .sort-select,
+            #tagFilterSelect {
+                height: 46px;
+                padding: 10px 26px 10px 16px;
+                font-size: 0.95rem;
+                min-width: 130px;
+            }
+            .add-tag-btn {
+                height: 46px;
+                width: 46px;
+            }
+            .action-bar .btn {
+                padding: 12px 0;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <!-- 初始化界面 -->
+    <div id="initScreen" class="init-screen">
+        <h2>📚 小书袋 · 初见</h2>
+        <p>把你以前看过的书装进来吧 ✨ 也可以跳过～</p>
+        <textarea id="initInput" class="init-textarea" placeholder="一行一本，格式：&#10;2025-01-01/三体/5/宇宙闪烁好吓人！&#10;2025-02-10/魔道祖师/4/忘羡令人上头"></textarea>
+        <div class="init-actions">
+            <button id="initConfirmBtn" class="btn"><i class="fas fa-check"></i> 确定录入</button>
+            <button id="initSkipBtn" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> 跳过，直接进入</button>
+        </div>
+    </div>
+
+    <!-- 正式页面 -->
+    <div id="mainScreen" class="main-screen">
+        <!-- 顶部工具栏 (排序和标签筛选) -->
+        <div class="toolbar">
+            <select id="sortSelect" class="sort-select">
+                <option value="date-desc">📅 日期降序</option>
+                <option value="date-asc">📅 日期升序</option>
+                <option value="rating-desc">⭐ 评分降序</option>
+                <option value="rating-asc">⭐ 评分升序</option>
+            </select>
+
+            <div class="tag-filter-group">
+                <select id="tagFilterSelect">
+                    <option value="">🏷️ 全部标签</option>
+                </select>
+                <span id="addTagBtn" class="add-tag-btn" title="新建标签"> + </span>
+            </div>
+        </div>
+
+        <!-- 卡片列表 -->
+        <div id="cardsContainer" class="cards-grid"></div>
+
+        <!-- 底部区域：搜索框 + 双按钮栏 -->
+        <div class="bottom-section">
+            <div class="search-area">
+                <input type="search" id="globalSearchInput" placeholder="🔍 搜索书名...">
+            </div>
+            <div class="action-bar">
+                <button id="exportBtn" class="btn btn-action"><i class="fas fa-download"></i> 导出</button>
+                <button id="addRecordBtn" class="btn btn-action"><i class="fas fa-plus-circle"></i> 添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗：添加/编辑阅读记录 -->
+    <div id="recordModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">📖 记录一本书</h3>
+            <div class="form-group">
+                <label>📘 小说名</label>
+                <input type="text" id="bookTitle" class="form-control" placeholder="例如：三体">
+            </div>
+            <div class="form-group">
+                <label>⭐ 评分 (1~5，可带小数)</label>
+                <input type="number" step="0.1" min="1" max="5" id="bookRating" class="form-control" value="5">
+            </div>
+            <div class="form-group">
+                <label>📝 书评/感受</label>
+                <textarea id="bookReview" class="form-control" rows="2" placeholder="写几句感受吧..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>📅 阅读日期</label>
+                <input type="date" id="bookDate" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>🏷️ 标签 (选填)</label>
+                <select id="bookTag" class="form-control">
+                    <option value="">—— 无标签 ——</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button id="deleteRecordBtn" class="modal-btn delete"><i class="fas fa-trash-alt"></i> 删除</button>
+                <button id="cancelModalBtn" class="modal-btn secondary">取消</button>
+                <button id="saveRecordBtn" class="modal-btn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗：添加标签 -->
+    <div id="tagModal" class="modal">
+        <div class="modal-content small">
+            <h3>🏷️ 新标签</h3>
+            <div class="form-group">
+                <label>标签名字</label>
+                <input type="text" id="newTagName" class="form-control" placeholder="例如：奇幻" maxlength="20">
+            </div>
+            <div class="modal-actions center">
+                <button id="cancelTagBtn" class="modal-btn secondary">取消</button>
+                <button id="saveTagBtn" class="modal-btn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗：导出数据 -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <h3>📤 导出阅读数据</h3>
+            <div class="form-group">
+                <label>数据内容（格式：小说名/评分/书评/日期/标签）</label>
+                <textarea id="exportDataText" class="form-control" rows="12" readonly style="font-family: monospace;"></textarea>
+            </div>
+            <div class="modal-actions center">
+                <button id="copyExportBtn" class="modal-btn"><i class="fas fa-copy"></i> 复制全部</button>
+                <button id="closeExportBtn" class="modal-btn secondary">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- 数据 ----------
+        let cards = [];
+        let tags = [];
+        let selectedTagId = null;
+        let sortOption = 'date-desc';
+        let searchText = '';
+        let editingId = null;
+        let scrollPosition = 0;
+
+        // DOM 元素
+        const initScreen = document.getElementById('initScreen');
+        const mainScreen = document.getElementById('mainScreen');
+        const initInput = document.getElementById('initInput');
+        const initConfirm = document.getElementById('initConfirmBtn');
+        const initSkip = document.getElementById('initSkipBtn');
+
+        const sortSelect = document.getElementById('sortSelect');
+        const tagFilterSelect = document.getElementById('tagFilterSelect');
+        const addTagBtn = document.getElementById('addTagBtn');
+        const globalSearchInput = document.getElementById('globalSearchInput');
+        const addRecordBtn = document.getElementById('addRecordBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const cardsContainer = document.getElementById('cardsContainer');
+
+        const recordModal = document.getElementById('recordModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const bookTitle = document.getElementById('bookTitle');
+        const bookRating = document.getElementById('bookRating');
+        const bookReview = document.getElementById('bookReview');
+        const bookDate = document.getElementById('bookDate');
+        const bookTag = document.getElementById('bookTag');
+        const deleteBtn = document.getElementById('deleteRecordBtn');
+        const cancelBtn = document.getElementById('cancelModalBtn');
+        const saveBtn = document.getElementById('saveRecordBtn');
+
+        const tagModal = document.getElementById('tagModal');
+        const newTagName = document.getElementById('newTagName');
+        const cancelTagBtn = document.getElementById('cancelTagBtn');
+        const saveTagBtn = document.getElementById('saveTagBtn');
+
+        const exportModal = document.getElementById('exportModal');
+        const exportDataText = document.getElementById('exportDataText');
+        const copyExportBtn = document.getElementById('copyExportBtn');
+        const closeExportBtn = document.getElementById('closeExportBtn');
+
+        // 本地存储
+        function loadFromStorage() {
+            try {
+                const savedCards = localStorage.getItem('littleBook_cards');
+                const savedTags = localStorage.getItem('littleBook_tags');
+                if (savedCards) cards = JSON.parse(savedCards) || [];
+                if (savedTags) tags = JSON.parse(savedTags) || [];
+            } catch (e) {}
+        }
+        function saveToStorage() {
+            localStorage.setItem('littleBook_cards', JSON.stringify(cards));
+            localStorage.setItem('littleBook_tags', JSON.stringify(tags));
+        }
+
+        loadFromStorage();
+        if (cards.length > 0 || tags.length > 0) {
+            initScreen.style.display = 'none';
+            mainScreen.style.display = 'flex';
+        } else {
+            initScreen.style.display = 'block';
+            mainScreen.style.display = 'none';
+        }
+
+        function getTodayDate() {
+            const d = new Date();
+            return d.toISOString().slice(0,10);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                if (m === '"') return '&quot;';
+                return m;
+            });
+        }
+
+        function renderTagControls() {
+            let filterHtml = '<option value="">🏷️ 全部标签</option>';
+            tags.forEach(tag => {
+                const selected = (selectedTagId === tag.id) ? 'selected' : '';
+                filterHtml += `<option value="${tag.id}" ${selected}>${escapeHtml(tag.name)}</option>`;
+            });
+            tagFilterSelect.innerHTML = filterHtml;
+
+            let modalTagOptions = '<option value="">—— 无标签 ——</option>';
+            tags.forEach(tag => {
+                modalTagOptions += `<option value="${tag.id}">${escapeHtml(tag.name)}</option>`;
+            });
+            bookTag.innerHTML = modalTagOptions;
+        }
+
+        function renderCards() {
+            let filtered = cards;
+            if (selectedTagId !== null) {
+                filtered = filtered.filter(c => c.tagId === selectedTagId);
+            }
+            if (searchText.trim() !== '') {
+                const lowerSearch = searchText.toLowerCase();
+                filtered = filtered.filter(c => (c.title && c.title.toLowerCase().includes(lowerSearch)));
+            }
+            const sorted = [...filtered].sort((a, b) => {
+                switch (sortOption) {
+                    case 'date-asc':  return new Date(a.date) - new Date(b.date);
+                    case 'date-desc': return new Date(b.date) - new Date(a.date);
+                    case 'rating-asc': return (a.rating || 0) - (b.rating || 0);
+                    case 'rating-desc': return (b.rating || 0) - (a.rating || 0);
+                    default: return 0;
+                }
+            });
+
+            if (sorted.length === 0) {
+                cardsContainer.innerHTML = `<div class="empty-note">📭 没有找到小书，试试其他关键词吧～</div>`;
+                return;
+            }
+
+            let cardsHtml = '';
+            sorted.forEach(card => {
+                const tagObj = tags.find(t => t.id === card.tagId);
+                const tagName = tagObj ? tagObj.name : '';
+                const ratingNum = card.rating || 0;
+                const starCount = Math.round(ratingNum);
+                const fullStars = '⭐'.repeat(starCount);
+                const emptyStars = '☆'.repeat(5 - starCount);
+                const ratingDisplay = `${fullStars}${emptyStars} (${ratingNum.toFixed(1)}分)`;
+
+                cardsHtml += `
+                    <div class="card" data-card-id="${card.id}">
+                        <div class="card-title" title="${escapeHtml(card.title)}">${escapeHtml(card.title) || '无名'}</div>
+                        <span class="card-rating" title="${ratingNum}分">${ratingDisplay}</span>
+                        <div class="card-review">${escapeHtml(card.review) || '✨ 没有写下感受'}</div>
+                        <div class="card-footer">
+                            <span>📅 ${card.date || '未知'}</span>
+                            ${tagName ? `<span class="card-tag" title="${escapeHtml(tagName)}"># ${escapeHtml(tagName)}</span>` : '<span></span>'}
+                            <span class="card-edit-icon" title="编辑"><i class="fas fa-pencil-alt"></i></span>
+                        </div>
+                    </div>
+                `;
+            });
+            cardsContainer.innerHTML = cardsHtml;
+        }
+
+        function refreshUI() {
+            renderTagControls();
+            renderCards();
+        }
+
+        // 弹窗控制
+        function openModal(modalElement) {
+            scrollPosition = window.scrollY;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPosition}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            modalElement.style.display = 'flex';
+        }
+        function closeModal(modalElement) {
+            modalElement.style.display = 'none';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            window.scrollTo(0, scrollPosition);
+        }
+
+        function openRecordModal(editingCard = null) {
+            if (editingCard) {
+                editingId = editingCard.id;
+                modalTitle.innerText = '✏️ 编辑小书';
+                bookTitle.value = editingCard.title || '';
+                bookRating.value = editingCard.rating || '5';
+                bookReview.value = editingCard.review || '';
+                bookDate.value = editingCard.date || getTodayDate();
+                bookTag.value = editingCard.tagId !== undefined ? editingCard.tagId : '';
+                deleteBtn.style.display = 'inline-block';
+            } else {
+                editingId = null;
+                modalTitle.innerText = '📘 新书记录';
+                bookTitle.value = '';
+                bookRating.value = '5';
+                bookReview.value = '';
+                bookDate.value = getTodayDate();
+                bookTag.value = '';
+                deleteBtn.style.display = 'none';
+            }
+            openModal(recordModal);
+        }
+        function closeRecordModal() {
+            closeModal(recordModal);
+            editingId = null;
+        }
+
+        function saveCard() {
+            const title = bookTitle.value.trim();
+            const rating = parseFloat(bookRating.value);
+            const review = bookReview.value.trim();
+            const date = bookDate.value;
+            const tagId = bookTag.value === '' ? null : bookTag.value;
+
+            if (!title) { alert('小说名不能为空哦'); return; }
+            if (isNaN(rating) || rating < 1 || rating > 5) { alert('评分须为1~5之间的数字'); return; }
+            if (!date) { alert('请填写日期'); return; }
+
+            if (editingId) {
+                const index = cards.findIndex(c => c.id === editingId);
+                if (index !== -1) {
+                    cards[index] = { ...cards[index], title, rating, review, date, tagId };
+                }
+            } else {
+                const newCard = {
+                    id: Date.now() + Math.random(),
+                    title,
+                    rating,
+                    review,
+                    date,
+                    tagId,
+                };
+                cards.push(newCard);
+            }
+            saveToStorage();
+            refreshUI();
+            closeRecordModal();
+        }
+
+        function deleteCurrentCard() {
+            if (!editingId) return;
+            if (confirm('确定要把这本书请出小书袋吗？')) {
+                cards = cards.filter(c => c.id !== editingId);
+                saveToStorage();
+                refreshUI();
+                closeRecordModal();
+            }
+        }
+
+        function openTagModal() {
+            newTagName.value = '';
+            openModal(tagModal);
+        }
+        function closeTagModal() {
+            closeModal(tagModal);
+        }
+        function saveNewTag() {
+            const name = newTagName.value.trim();
+            if (!name) { alert('标签名不能为空'); return; }
+            if (tags.some(t => t.name === name)) { alert('标签已存在'); return; }
+            tags.push({ id: 'tag_' + Date.now() + Math.random(), name: name });
+            saveToStorage();
+            refreshUI();
+            closeTagModal();
+        }
+
+        // 导出功能
+        function generateExportText() {
+            // 按照当前排序导出所有卡片（不受标签筛选影响）
+            const sortedAll = [...cards].sort((a, b) => {
+                switch (sortOption) {
+                    case 'date-asc':  return new Date(a.date) - new Date(b.date);
+                    case 'date-desc': return new Date(b.date) - new Date(a.date);
+                    case 'rating-asc': return (a.rating || 0) - (b.rating || 0);
+                    case 'rating-desc': return (b.rating || 0) - (a.rating || 0);
+                    default: return 0;
+                }
+            });
+            let lines = [];
+            sortedAll.forEach(card => {
+                const tagObj = tags.find(t => t.id === card.tagId);
+                const tagName = tagObj ? tagObj.name : '';
+                const line = `${card.title}/${card.rating}/${card.review}/${card.date}/${tagName}`;
+                lines.push(line);
+            });
+            return lines.join('\n');
+        }
+
+        function openExportModal() {
+            exportDataText.value = generateExportText();
+            openModal(exportModal);
+        }
+        function closeExportModal() {
+            closeModal(exportModal);
+        }
+        function copyExportData() {
+            const text = exportDataText.value;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ 已复制到剪贴板！');
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        function importFromInitText() {
+            const text = initInput.value.trim();
+            if (!text) return;
+            const lines = text.split('\n');
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+                const parts = line.split('/');
+                if (parts.length >= 4) {
+                    const date = parts[0].trim();
+                    const title = parts[1].trim();
+                    const rating = parseFloat(parts[2].trim());
+                    const review = parts.slice(3).join('/').trim();
+                    if (date && title && !isNaN(rating) && rating >=1 && rating<=5) {
+                        cards.push({
+                            id: Date.now() + Math.random() + cards.length,
+                            title,
+                            rating,
+                            review,
+                            date,
+                            tagId: null,
+                        });
+                    }
+                }
+            });
+            saveToStorage();
+        }
+
+        // 事件绑定
+        initConfirm.addEventListener('click', () => {
+            importFromInitText();
+            initScreen.style.display = 'none';
+            mainScreen.style.display = 'flex';
+            refreshUI();
+        });
+        initSkip.addEventListener('click', () => {
+            initScreen.style.display = 'none';
+            mainScreen.style.display = 'flex';
+            refreshUI();
+        });
+
+        addRecordBtn.addEventListener('click', () => openRecordModal());
+        exportBtn.addEventListener('click', openExportModal);
+
+        sortSelect.addEventListener('change', (e) => {
+            sortOption = e.target.value;
+            renderCards();
+        });
+
+        tagFilterSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            selectedTagId = val === '' ? null : val;
+            renderCards();
+        });
+
+        addTagBtn.addEventListener('click', openTagModal);
+        cancelTagBtn.addEventListener('click', closeTagModal);
+        saveTagBtn.addEventListener('click', saveNewTag);
+        tagModal.addEventListener('click', (e) => {
+            if (e.target === tagModal) closeTagModal();
+        });
+
+        copyExportBtn.addEventListener('click', copyExportData);
+        closeExportBtn.addEventListener('click', closeExportModal);
+        exportModal.addEventListener('click', (e) => {
+            if (e.target === exportModal) closeExportModal();
+        });
+
+        function handleSearch(e) {
+            searchText = e.target.value;
+            renderCards();
+        }
+        globalSearchInput.addEventListener('input', handleSearch);
+
+        cardsContainer.addEventListener('dblclick', (e) => {
+            const cardEl = e.target.closest('.card');
+            if (!cardEl) return;
+            const cardId = cardEl.dataset.cardId;
+            const card = cards.find(c => c.id == cardId);
+            if (card) openRecordModal(card);
+        });
+        cardsContainer.addEventListener('click', (e) => {
+            const editIcon = e.target.closest('.card-edit-icon');
+            if (!editIcon) return;
+            const cardEl = editIcon.closest('.card');
+            if (cardEl) {
+                const cardId = cardEl.dataset.cardId;
+                const card = cards.find(c => c.id == cardId);
+                if (card) openRecordModal(card);
+            }
+        });
+
+        cancelBtn.addEventListener('click', closeRecordModal);
+        saveBtn.addEventListener('click', saveCard);
+        deleteBtn.addEventListener('click', deleteCurrentCard);
+        recordModal.addEventListener('click', (e) => {
+            if (e.target === recordModal) closeRecordModal();
+        });
+
+        if (mainScreen.style.display === 'flex') {
+            refreshUI();
+        }
+    })();
+</script>
+</body>
+</html>
